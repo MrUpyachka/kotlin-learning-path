@@ -8,6 +8,7 @@ class KotlinLearningPathApplicationTests {
 
     @Test
     fun contextLoads() {
+        // dummy test in template o_O some stuff not changing...
     }
 
 }

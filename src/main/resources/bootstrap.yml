@@ -1,0 +1,4 @@
+jasypt:
+  encryptor:
+    algorithm: ${JASYPT_ENC_ALGORITHM:PBEWITHHMACSHA512ANDAES_256}
+    password: ${JASYPT_ENC_PASSWORD}
