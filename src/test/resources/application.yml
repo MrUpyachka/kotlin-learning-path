@@ -1,0 +1,22 @@
+spring:
+  main:
+    web-application-type: none
+  security:
+    oauth2:
+      client:
+        registration:
+          task-api-client:
+            provider: task-api
+            authorization-grant-type: client_credentials
+            scope: task.read
+        provider:
+          task-api:
+            token-uri: ${task.api.location.url}/api/oauth2/token
+
+jasypt:
+  encryptor:
+    algorithm: ${JASYPT_ENC_ALGORITHM:PBEWITHHMACSHA512ANDAES_256}
+    password: ${JASYPT_ENC_PASSWORD}
+
+task.api:
+  endpoint.create.url: ${task.api.location.url}/api/task

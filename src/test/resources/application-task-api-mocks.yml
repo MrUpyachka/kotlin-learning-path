@@ -1,0 +1,8 @@
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          task-api-client:
+            client-id: task-api-client-id
+            client-secret: ENC(wAKzMzaxRtcEdap4TJ/LpyfKQic4s3x08IPuT4J4JxEH/Ie2TTdR3mEM4AjJ7KWiHfcmhRePjDxzWEbSAPtVtw==)
