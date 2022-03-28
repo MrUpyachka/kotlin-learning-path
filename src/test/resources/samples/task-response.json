@@ -1,0 +1,15 @@
+{
+  "response_id": "63ce930f-582a-4880-886d-96b671d96aa8",
+  "request_id": "e0cc69d2-ef41-43a7-bedc-1caf11c8b612",
+  "data": {
+    "type": "task",
+    "id": "TSTDT-77385",
+    "details": {
+      "title": "Implement tests for response handling",
+      "desc": "TBA",
+      "author": "test-user-ref"
+    },
+    "last_updated": "2022-03-27T20:46:20+0000",
+    "created": "2022-03-27T19:41:03+0000"
+  }
+}
