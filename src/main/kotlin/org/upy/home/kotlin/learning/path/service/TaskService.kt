@@ -27,6 +27,7 @@ class TaskService constructor(
             .headers { headers -> headers.accept = listOf(MediaType.APPLICATION_JSON) }
             .retrieve()
             .toEntity(JsonNode::class.java)
-            .map { e -> parser.apply(e.body) }
+            .map { e -> e.body }
+            .map { b -> parser.apply(b) }
     }
 }

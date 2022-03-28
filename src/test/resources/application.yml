@@ -12,7 +12,9 @@ spring:
         provider:
           task-api:
             token-uri: ${task.api.location.url}/api/oauth2/token
-
+logging.level:
+  root: info
+  org.upy.home.kotlin.learning.path: debug
 jasypt:
   encryptor:
     algorithm: ${JASYPT_ENC_ALGORITHM:PBEWITHHMACSHA512ANDAES_256}
