@@ -29,5 +29,6 @@ class TaskService constructor(
             .toEntity(JsonNode::class.java)
             .map { e -> e.body }
             .map { b -> parser.apply(b) }
+            .doOnSuccess { t -> log.info { "Task loaded: id=${t.id}, title=${t.title}" } }
     }
 }
