@@ -1,6 +1,7 @@
 package org.upy.home.kotlin.learning.path.config
 
 import com.ulisesbocchio.jasyptspringboot.annotation.EnableEncryptableProperties
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.boot.autoconfigure.security.oauth2.client.OAuth2ClientProperties
 import org.springframework.boot.autoconfigure.security.oauth2.client.OAuth2ClientPropertiesRegistrationAdapter
 import org.springframework.boot.context.properties.EnableConfigurationProperties
@@ -14,14 +15,16 @@ import org.springframework.security.oauth2.client.ReactiveOAuth2AuthorizedClient
 import org.springframework.security.oauth2.client.registration.InMemoryReactiveClientRegistrationRepository
 import org.springframework.security.oauth2.client.registration.ReactiveClientRegistrationRepository
 import org.springframework.security.oauth2.client.web.reactive.function.client.ServerOAuth2AuthorizedClientExchangeFilterFunction
+import org.springframework.web.reactive.function.client.ExchangeFilterFunction
 import org.springframework.web.reactive.function.client.WebClient
+import org.upy.home.kotlin.learning.path.http.TaskApiResponseErrorFilter
 import org.upy.home.kotlin.learning.path.parser.TaskResponseParser
 import org.upy.home.kotlin.learning.path.service.TaskService
 
 @Configuration
 @EnableEncryptableProperties
 @EnableConfigurationProperties(OAuth2ClientProperties::class)
-@Import(TaskService::class, TaskResponseParser::class)
+@Import(TaskService::class, TaskResponseParser::class, TaskApiResponseErrorFilter::class)
 class TaskApiClientConfig {
     @Bean
     fun clientRegistrationRepository(properties: OAuth2ClientProperties?): ReactiveClientRegistrationRepository {
@@ -46,11 +49,20 @@ class TaskApiClientConfig {
     }
 
     @Bean
-    fun taskApiClient(manager: ReactiveOAuth2AuthorizedClientManager): WebClient {
-        val filter = ServerOAuth2AuthorizedClientExchangeFilterFunction(manager)
-        filter.setDefaultClientRegistrationId("task-api-client")
+    fun taskApiResponseErrorFilter(filter: TaskApiResponseErrorFilter): ExchangeFilterFunction {
+        return ExchangeFilterFunction.ofResponseProcessor(filter::apply)
+    }
+
+    @Bean
+    fun taskApiClient(
+        manager: ReactiveOAuth2AuthorizedClientManager,
+        @Qualifier("taskApiResponseErrorFilter") errorFilter: ExchangeFilterFunction
+    ): WebClient {
+        val authFilter = ServerOAuth2AuthorizedClientExchangeFilterFunction(manager)
+        authFilter.setDefaultClientRegistrationId("task-api-client")
         return WebClient.builder()
-            .filter(filter)
+            .filter(authFilter)
+            .filter(errorFilter)
             .build()
     }
 
