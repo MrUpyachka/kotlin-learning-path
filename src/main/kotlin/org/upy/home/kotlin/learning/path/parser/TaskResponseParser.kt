@@ -20,8 +20,9 @@ class TaskResponseParser {
         }
         val data = json.path("data")
         val type = data.path("type")
-        if (!type.textValue().equals("task"))
-            throw TaskHandlingException("Unsupported entry type: '$type', 'task' expected")
+        val typeValue = type.textValue()
+        if (!typeValue.equals("task"))
+            throw TaskHandlingException("Unsupported entry type: '$typeValue', 'task' expected")
         val id = data.path("id").textValue()
         val details = data.path("details")
         val title = details.path("title").textValue()

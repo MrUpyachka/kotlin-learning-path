@@ -8,6 +8,7 @@ plugins {
 	kotlin("jvm") version lombokPluginVersion
 	kotlin("plugin.spring") version lombokPluginVersion
 	kotlin("plugin.lombok") version lombokPluginVersion
+	jacoco
 }
 
 group = "org.upy.home"
@@ -45,6 +46,10 @@ dependencies {
 	testImplementation("com.squareup.okhttp3:mockwebserver:$okhttpVersion")
 }
 
+jacoco {
+	toolVersion = "0.8.7"
+}
+
 tasks.withType<KotlinCompile> {
 	kotlinOptions {
 		freeCompilerArgs = listOf("-Xjsr305=strict")
@@ -54,4 +59,29 @@ tasks.withType<KotlinCompile> {
 
 tasks.withType<Test> {
 	useJUnitPlatform()
+}
+
+tasks.test {
+	finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.jacocoTestReport {
+	dependsOn(tasks.test)
+}
+
+tasks.jacocoTestCoverageVerification {
+	violationRules {
+		rule {
+			element = "BUNDLE"
+			limit {
+				counter = "INSTRUCTION"
+				value = "COVEREDRATIO"
+				minimum = "0.93".toBigDecimal()
+			}
+		}
+	}
+}
+
+tasks.check {
+	dependsOn(tasks.jacocoTestCoverageVerification)
 }

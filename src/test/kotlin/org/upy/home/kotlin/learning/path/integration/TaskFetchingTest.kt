@@ -132,18 +132,44 @@ class TaskFetchingTest {
             .verify()
     }
 
-    private fun assertBadRequestException(exception: Throwable) {
+    @Test
+    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+    fun throwsOnUnexpectedEntryType() {
+        mockWebServer.enqueue(createJsonResponse(tokenRsContentPath))
+        mockWebServer.enqueue(
+            createJsonResponse("samples/incident-response.json")
+                .setResponseCode(HttpStatus.OK.value())
+        )
+
+        StepVerifier.create(service.find(testTaskId))
+            .expectErrorSatisfies(::assertWrongEntryTypeException)
+            .verify()
+    }
+
+    private fun assertTaskHandlingExcHasMessage(exception: Throwable) {
         Assertions.assertTrue(
             exception is TaskHandlingException
         ) { "Unexpected exception class: ${exception.javaClass}, expected - TaskHandlingException" }
+        Assertions.assertNotNull(exception.message, "Thrown exception has no message")
+    }
+
+    private fun assertBadRequestException(exception: Throwable) {
+        assertTaskHandlingExcHasMessage(exception)
         val message = exception.message
-        Assertions.assertNotNull(message, "Thrown exception has no message")
         Assertions.assertTrue(
             message!!.contains("Request to task API failed: statusCode=400")
         ) { "No issue description found in exception message: $message" }
         Assertions.assertTrue(
             message.contains("Something went wrong... we have no idea how to help you")
         ) { "No details from response found in exception message: $message" }
+    }
+
+    private fun assertWrongEntryTypeException(exception: Throwable) {
+        assertTaskHandlingExcHasMessage(exception)
+        val message = exception.message
+        Assertions.assertTrue(
+            message!!.contains("Unsupported entry type: 'incident', 'task' expected")
+        ) { "No issue description found in exception message: $message" }
     }
 
     private fun assertTaskParsed(task: Task) {
