@@ -12,6 +12,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.core.io.ClassPathResource
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
+import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ActiveProfiles
@@ -20,6 +21,7 @@ import org.springframework.test.context.DynamicPropertySource
 import org.springframework.util.SocketUtils
 import org.upy.home.kotlin.learning.path.config.TaskApiClientConfig
 import org.upy.home.kotlin.learning.path.dto.Task
+import org.upy.home.kotlin.learning.path.exception.TaskHandlingException
 import org.upy.home.kotlin.learning.path.service.TaskService
 import reactor.test.StepVerifier
 import java.nio.charset.StandardCharsets
@@ -72,9 +74,7 @@ class TaskFetchingTest {
         val actualUrl = tokenRequest.requestUrl.toString()
         // just sanity check that it was request for token, not something else
         Assertions.assertTrue(
-            actualUrl.endsWith(
-                expectedUrlSuffix
-            )
+            actualUrl.endsWith(expectedUrlSuffix)
         ) { "Unexpected token request URL: '$actualUrl', expectedUrlSuffix='$expectedUrlSuffix'" }
         // not checking the rest of request as it provided by spring
     }
@@ -93,9 +93,7 @@ class TaskFetchingTest {
         val expectedUrlSuffix = "$mockServerPort/api/task?id=$testTaskId"
         val actualUrl = request.requestUrl.toString()
         Assertions.assertTrue(
-            actualUrl.endsWith(
-                expectedUrlSuffix
-            )
+            actualUrl.endsWith(expectedUrlSuffix)
         ) { "Unexpected request URL: '$actualUrl', expectedUrlSuffix='$expectedUrlSuffix'" }
         val acceptHeader = request.getHeader(HttpHeaders.ACCEPT)
         val expectedPrefix = MediaType.APPLICATION_JSON_VALUE
@@ -118,6 +116,60 @@ class TaskFetchingTest {
         StepVerifier.create(service.find(testTaskId))
             .assertNext(::assertTaskParsed)
             .verifyComplete()
+    }
+
+    @Test
+    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+    fun throwsOnBadRequest() {
+        mockWebServer.enqueue(createJsonResponse(tokenRsContentPath))
+        mockWebServer.enqueue(
+            createJsonResponse("samples/bad-response.json")
+                .setResponseCode(HttpStatus.BAD_REQUEST.value())
+        )
+
+        StepVerifier.create(service.find(testTaskId))
+            .expectErrorSatisfies(::assertBadRequestException)
+            .verify()
+    }
+
+    @Test
+    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+    fun throwsOnUnexpectedEntryType() {
+        mockWebServer.enqueue(createJsonResponse(tokenRsContentPath))
+        mockWebServer.enqueue(
+            createJsonResponse("samples/incident-response.json")
+                .setResponseCode(HttpStatus.OK.value())
+        )
+
+        StepVerifier.create(service.find(testTaskId))
+            .expectErrorSatisfies(::assertWrongEntryTypeException)
+            .verify()
+    }
+
+    private fun assertTaskHandlingExcHasMessage(exception: Throwable) {
+        Assertions.assertTrue(
+            exception is TaskHandlingException
+        ) { "Unexpected exception class: ${exception.javaClass}, expected - TaskHandlingException" }
+        Assertions.assertNotNull(exception.message, "Thrown exception has no message")
+    }
+
+    private fun assertBadRequestException(exception: Throwable) {
+        assertTaskHandlingExcHasMessage(exception)
+        val message = exception.message
+        Assertions.assertTrue(
+            message!!.contains("Request to task API failed: statusCode=400")
+        ) { "No issue description found in exception message: $message" }
+        Assertions.assertTrue(
+            message.contains("Something went wrong... we have no idea how to help you")
+        ) { "No details from response found in exception message: $message" }
+    }
+
+    private fun assertWrongEntryTypeException(exception: Throwable) {
+        assertTaskHandlingExcHasMessage(exception)
+        val message = exception.message
+        Assertions.assertTrue(
+            message!!.contains("Unsupported entry type: 'incident', 'task' expected")
+        ) { "No issue description found in exception message: $message" }
     }
 
     private fun assertTaskParsed(task: Task) {
