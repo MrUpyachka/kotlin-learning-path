@@ -7,5 +7,5 @@ import org.springframework.boot.runApplication
 class KotlinLearningPathApplication
 
 fun main(args: Array<String>) {
-	runApplication<KotlinLearningPathApplication>(*args)
+    runApplication<KotlinLearningPathApplication>(*args)
 }
